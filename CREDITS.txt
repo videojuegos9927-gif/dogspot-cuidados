@@ -1,0 +1,19 @@
+DOGSPOT — SONIDOS DE NOTIFICACIÓN
+
+dog-bark.mp3
+Título original: George vuf 1996.ogg
+Autor: Broadbeer. Grabación del labrador George.
+Fuente: https://commons.wikimedia.org/wiki/File:George_vuf_1996.ogg
+Licencia: dedicado al dominio público por su autor (PD-self).
+Cambios: conversión de Ogg Vorbis a MP3 mono 44.1 kHz, 96 kb/s; sin recortes.
+
+cat-meow.mp3
+Título original: Meow.ogg (maullido del gato Silas)
+Autor: Dan Crosby (Dcrosby).
+Fuente: https://commons.wikimedia.org/wiki/File:Meow.ogg
+Licencia: Creative Commons Attribution-ShareAlike 3.0 Unported.
+https://creativecommons.org/licenses/by-sa/3.0/
+Cambios: conversión de Ogg Vorbis a MP3 mono 44.1 kHz, 96 kb/s; sin recortes.
+El audio convertido se distribuye bajo la misma licencia CC BY-SA 3.0.
+
+Son grabaciones genéricas para avisos de interfaz, no evidencias de las mascotas de los usuarios.
