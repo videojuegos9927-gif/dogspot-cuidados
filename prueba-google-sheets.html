@@ -2,69 +2,128 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>DOGSPOT | Prueba de conexión con Google Sheets</title>
+  <title>DOGSPOT | Pruebas de Google Sheets</title>
   <style>
-    * {box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:660px;margin:0 auto;padding:32px 18px;color:#17334a;background:#f5f9fb;line-height:1.55}
-    main{background:#fff;padding:26px;border:1px solid #dce9ef;border-radius:18px;box-shadow:0 8px 25px #1539570b}
-    h1{font-size:1.5rem;line-height:1.25;margin:0 0 8px} p{margin:10px 0} label{display:block;font-weight:700;margin-top:20px}
-    input{width:100%;font:inherit;border:1px solid #aec3cf;border-radius:9px;padding:12px;margin-top:6px}
-    button{font:inherit;font-weight:700;background:#116c60;color:white;border:0;border-radius:10px;padding:12px 20px;cursor:pointer;margin-top:18px}
-    button:disabled{opacity:.65;cursor:wait} .note{background:#eff7f6;border-radius:10px;padding:12px;margin:16px 0;font-size:.92rem}
-    #status{min-height:1.5em;margin-top:18px} code{font-size:.87rem;overflow-wrap:anywhere}
-    small{display:block;color:#637889;margin-top:18px}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;max-width:750px;margin:auto;padding:32px 18px;color:#183649;background:#f5f9fb;line-height:1.55}
+    main{background:white;padding:27px;border:1px solid #dce9ef;border-radius:18px;box-shadow:0 8px 25px #1539570b}
+    h1{font-size:1.55rem;line-height:1.25;margin:0 0 8px}
+    p{margin:10px 0}
+    label{display:block;font-weight:700;margin-top:18px}
+    input{width:100%;font:inherit;border:1px solid #adc5cc;border-radius:9px;padding:12px;margin-top:7px}
+    button{font:inherit;font-weight:700;background:#146c5f;color:white;border:0;border-radius:10px;padding:13px 18px;cursor:pointer;margin-top:17px}
+    button:disabled{opacity:.65;cursor:wait}
+    .notice{background:#f1f8f6;border:1px solid #d8eae5;border-radius:10px;padding:13px;margin:16px 0;font-size:.93rem}
+    .subtle{color:#617789;font-size:.92rem}
+    #status{margin-top:15px;min-height:1.5em;white-space:pre-line;font-weight:500}
+    table{border-collapse:collapse;width:100%;margin:15px 0;font-size:.91rem}
+    th,td{border-bottom:1px solid #e4eaed;text-align:left;padding:9px 5px}
+    th{background:#f2f7f9}
+    code{font-size:.9rem;word-break:break-word}
+    .codes{background:#f7f9fb;padding:12px;border-radius:9px;white-space:pre-wrap}
+    #ids{display:none}
+    #ids.visible{display:block}
   </style>
 </head>
 <body>
 <main>
-  <h1>DOGSPOT - Prueba Google Sheets</h1>
-  <p>Esta página comprueba la comunicación entre GitHub Pages y tu receptor de Google Apps Script.</p>
-  <div class="note"><strong>Solo datos ficticios.</strong> No ingreses información real de clientes ni mascotas. El receptor de pruebas únicamente acepta identificadores que incluyan <code>-TEST-</code>.</div>
-  <label for="endpoint">1. Pega tu enlace de Apps Script (terminado en /exec)</label>
-  <input id="endpoint" placeholder="https://script.google.com/macros/s/.../exec" type="url" autocomplete="off" spellcheck="false">
-  <p><strong>2.</strong> Presiona el botón. Se enviará un cliente ficticio a la pestaña <strong>Clientes</strong>.</p>
-  <button type="button" id="send">Enviar registro de prueba</button>
-  <p id="status" role="status" aria-live="polite"></p>
-  <small>Por seguridad, el enlace no se almacena en esta página ni se publica en el código. Debido a las restricciones entre dominios del navegador, el envío no confirma por sí solo el guardado: compruébalo en Google Sheets.</small>
+  <h1>DOGSPOT · Prueba de las cinco pestañas</h1>
+  <p>Comprobación del envío de registros ficticios desde GitHub Pages hacia Google Sheets.</p>
+  <p class="notice"><strong>Solo pruebas.</strong> No escribas datos reales de clientes, mascotas, tratamientos ni pagos. El sistema actual de Apps Script no está preparado para guardar datos personales de producción.</p>
+  <label for="endpoint">1. Pega el enlace de tu implementación de pruebas de Apps Script (/exec)</label>
+  <input id="endpoint" type="url" spellcheck="false" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
+  <label>2. Ejecuta la prueba completa</label>
+  <p>Se enviará un registro ficticio a cada una de las pestañas: Clientes, Mascotas, Solicitudes, Reservas y Pagos simulados. Los cinco registros compartirán identificadores relacionados.</p>
+  <button type="button" id="send">Enviar 5 registros de prueba</button>
+  <div id="status" role="status" aria-live="polite"></div>
+  <section id="ids" aria-label="Identificadores enviados">
+    <strong>Identificadores para buscar en Google Sheets:</strong>
+    <p class="codes" id="codes"></p>
+  </section>
+  <p class="subtle"><strong>3. Verifica las cinco pestañas manualmente.</strong> Por las restricciones de lectura entre dominios, el navegador puede informar que envió la solicitud, pero no puede confirmar desde esta página que Google guardó cada fila. Solo se confirma abriendo Google Sheets.</p>
 </main>
 <script>
 (() => {
-  const input = document.getElementById('endpoint');
-  const button = document.getElementById('send');
-  const status = document.getElementById('status');
-  button.addEventListener('click', async () => {
-    const url = input.value.trim();
-    if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)) {
-      status.textContent = 'Pega el enlace original de Apps Script que termina en /exec.';
+  const input=document.getElementById('endpoint');
+  const btn=document.getElementById('send');
+  const status=document.getElementById('status');
+  const ids=document.getElementById('ids');
+  const codes=document.getElementById('codes');
+  const config=[
+    ['cliente','Clientes','CLI'],
+    ['mascota','Mascotas','MAS'],
+    ['solicitud','Solicitudes','SOL'],
+    ['reserva','Reservas','RES'],
+    ['pago','Pagos simulados','PAG']
+  ];
+  btn.addEventListener('click',async()=>{
+    const url=input.value.trim();
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)){
+      status.textContent='Pega el enlace original de Apps Script que termina en /exec.';
       return;
     }
-    const id = 'CLI-TEST-WEB-' + Date.now();
-    const data = {
-      tipo: 'cliente',
-      idCliente: id,
-      nombreCompleto: 'Prueba desde DOGSPOT',
-      correoElectronico: 'prueba-web@example.com',
-      celular: '999999999',
-      estadoRegistro: 'Demostracion',
-      correoBienvenida: 'No enviado'
-    };
-    button.disabled = true;
-    status.textContent = 'Intentando enviar el registro ficticio...';
+    const stamp=Date.now()+'-'+Math.random().toString(36).slice(2,6);
+    const k=Object.fromEntries(config.map(([type,tab,prefix])=>[type,prefix+'-TEST-'+stamp]));
+    const now=new Date().toISOString();
+    const entries=[
+      {
+        tipo:'cliente',idCliente:k.cliente,fechaRegistro:now,
+        nombreCompleto:'Prueba completa DOGSPOT',
+        correoElectronico:'prueba-sheets@example.com',
+        celular:'999999999',estadoRegistro:'Demostracion',
+        correoBienvenida:'No enviado',ultimaActualizacion:now
+      },
+      {
+        tipo:'mascota',idMascota:k.mascota,idCliente:k.cliente,
+        fechaRegistro:now,nombreMascota:'Luna',tipoMascota:'Perro',
+        otroTipo:'',raza:'Mestiza',edad:'3 anios',estadoSalud:'Ficticio',
+        medicamentos:'No aplica',cuidadosEspeciales:'Reposo simulado',
+        observaciones:'Datos de prueba',enlaceFoto:''
+      },
+      {
+        tipo:'solicitud',idSolicitud:k.solicitud,idCliente:k.cliente,
+        idMascota:k.mascota,fechaSolicitud:now,fechaServicio:'2026-11-10',
+        horaInicio:'14:00',horaFin:'18:00',
+        indicacionesCliente:'Solo prueba del sistema',
+        estadoSolicitud:'Prueba',observaciones:'Ficticio'
+      },
+      {
+        tipo:'reserva',idReserva:k.reserva,idSolicitud:k.solicitud,
+        idCliente:k.cliente,idMascota:k.mascota,nombreCuidador:'Ana Torres',
+        fechaReserva:now,fechaServicio:'2026-11-10',
+        horaInicio:'14:00',horaFin:'18:00',
+        duracionHoras:4,tarifaHora:35,total:140,
+        estadoReserva:'Simulada'
+      },
+      {
+        tipo:'pago',idPago:k.pago,idReserva:k.reserva,
+        fechaRegistro:now,metodoPago:'Yape',banco:'',importe:140,
+        estadoPago:'Simulado',
+        observaciones:'Sin transaccion bancaria real'
+      }
+    ];
+    btn.disabled=true;
+    ids.classList.add('visible');
+    codes.textContent=config.map(([type,tab])=>tab+': '+k[type]).join('\n');
+    let count=0;
     try {
-      await fetch(url, {
-        method: 'POST',
-        mode: 'no-cors',
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-        headers: {'Content-Type': 'text/plain;charset=UTF-8'},
-        body: JSON.stringify(data)
-      });
-      status.textContent = 'Solicitud enviada desde el navegador. Revisa la pestaña Clientes y busca: ' + id + '. Si no aparece, revisaremos la implementación de Apps Script.';
-    } catch (e) {
-      status.textContent = 'El navegador no pudo completar la solicitud. Comprueba la URL, el acceso de la implementación y la conexión.';
-    } finally {
-      button.disabled = false;
+      for(const entry of entries) {
+        status.textContent='Intentando enviar '+(count+1)+' de 5: '+config[count][1]+'...';
+        await fetch(url,{
+          method:'POST',mode:'no-cors',redirect:'follow',
+          referrerPolicy:'no-referrer',
+          headers:{'Content-Type':'text/plain;charset=UTF-8'},
+          body:JSON.stringify(entry)
+        });
+        count++;
+      }
+      status.textContent='Las 5 solicitudes se enviaron desde el navegador. Abre Google Sheets y confirma que exista una fila nueva en cada pestaña. Si falta alguna, revisaremos Apps Script.';
+    }catch(error){
+      status.textContent='No se completaron todos los envíos. Solicitudes intentadas: '+count+' de 5. Revisa Google Sheets y comunícanos cuál falta.';
+    }finally{
+      btn.disabled=false;
     }
   });
 })();
