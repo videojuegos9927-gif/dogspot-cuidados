@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>DOGSPOT | Prueba de conexión con Google Sheets</title>
+  <style>
+    * {box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:660px;margin:0 auto;padding:32px 18px;color:#17334a;background:#f5f9fb;line-height:1.55}
+    main{background:#fff;padding:26px;border:1px solid #dce9ef;border-radius:18px;box-shadow:0 8px 25px #1539570b}
+    h1{font-size:1.5rem;line-height:1.25;margin:0 0 8px} p{margin:10px 0} label{display:block;font-weight:700;margin-top:20px}
+    input{width:100%;font:inherit;border:1px solid #aec3cf;border-radius:9px;padding:12px;margin-top:6px}
+    button{font:inherit;font-weight:700;background:#116c60;color:white;border:0;border-radius:10px;padding:12px 20px;cursor:pointer;margin-top:18px}
+    button:disabled{opacity:.65;cursor:wait} .note{background:#eff7f6;border-radius:10px;padding:12px;margin:16px 0;font-size:.92rem}
+    #status{min-height:1.5em;margin-top:18px} code{font-size:.87rem;overflow-wrap:anywhere}
+    small{display:block;color:#637889;margin-top:18px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>DOGSPOT - Prueba Google Sheets</h1>
+  <p>Esta página comprueba la comunicación entre GitHub Pages y tu receptor de Google Apps Script.</p>
+  <div class="note"><strong>Solo datos ficticios.</strong> No ingreses información real de clientes ni mascotas. El receptor de pruebas únicamente acepta identificadores que incluyan <code>-TEST-</code>.</div>
+  <label for="endpoint">1. Pega tu enlace de Apps Script (terminado en /exec)</label>
+  <input id="endpoint" placeholder="https://script.google.com/macros/s/.../exec" type="url" autocomplete="off" spellcheck="false">
+  <p><strong>2.</strong> Presiona el botón. Se enviará un cliente ficticio a la pestaña <strong>Clientes</strong>.</p>
+  <button type="button" id="send">Enviar registro de prueba</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <small>Por seguridad, el enlace no se almacena en esta página ni se publica en el código. Debido a las restricciones entre dominios del navegador, el envío no confirma por sí solo el guardado: compruébalo en Google Sheets.</small>
+</main>
+<script>
+(() => {
+  const input = document.getElementById('endpoint');
+  const button = document.getElementById('send');
+  const status = document.getElementById('status');
+  button.addEventListener('click', async () => {
+    const url = input.value.trim();
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)) {
+      status.textContent = 'Pega el enlace original de Apps Script que termina en /exec.';
+      return;
+    }
+    const id = 'CLI-TEST-WEB-' + Date.now();
+    const data = {
+      tipo: 'cliente',
+      idCliente: id,
+      nombreCompleto: 'Prueba desde DOGSPOT',
+      correoElectronico: 'prueba-web@example.com',
+      celular: '999999999',
+      estadoRegistro: 'Demostracion',
+      correoBienvenida: 'No enviado'
+    };
+    button.disabled = true;
+    status.textContent = 'Intentando enviar el registro ficticio...';
+    try {
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+        headers: {'Content-Type': 'text/plain;charset=UTF-8'},
+        body: JSON.stringify(data)
+      });
+      status.textContent = 'Solicitud enviada desde el navegador. Revisa la pestaña Clientes y busca: ' + id + '. Si no aparece, revisaremos la implementación de Apps Script.';
+    } catch (e) {
+      status.textContent = 'El navegador no pudo completar la solicitud. Comprueba la URL, el acceso de la implementación y la conexión.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
