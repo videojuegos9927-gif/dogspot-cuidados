@@ -1,0 +1,61 @@
+name: DogSpot visible copy checks
+on:
+  push:
+    branches:
+      - recovery/dogspot-2026-11-10
+    paths:
+      - .github/workflows/dogspot-visible-copy.yml
+      - maintenance/**
+permissions:
+  contents: write
+concurrency:
+  group: dogspot-visible-copy-recovery
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: recovery/dogspot-2026-11-10
+      - name: Apply reviewed text-only replacements
+        run: |
+          python3 maintenance/apply-visible-copy.py . maintenance/visible-copy-map.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('copy-change-report.json').read_text())
+          assert report['patched_sha256']=='e2117d823cf842c7167ad994d84211146e4abcca22271265c14c40007672f440'
+          assert report['literal_occurrences']==46
+          PY
+      - name: Prepare isolated browser tests
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/dogspot-test-env"
+          "$RUNNER_TEMP/dogspot-test-env/bin/pip" install --disable-pip-version-check playwright==1.57.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            "$RUNNER_TEMP/dogspot-test-env/bin/python" -m playwright install --with-deps chromium
+          fi
+      - name: Check 22 screens on mobile and desktop without live integrations
+        run: '"$RUNNER_TEMP/dogspot-test-env/bin/python" maintenance/test-visible-copy.py .'
+      - name: Commit only the verified published assets to the recovery branch
+        shell: bash
+        run: |
+          git config user.name 'DogSpot maintenance bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html index-copy-e2117d823cf8.js copy-change-report.json
+          git commit -m 'fix: remove visible demo labels except care and tracking start'
+          git push origin HEAD:recovery/dogspot-2026-11-10
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: dogspot-visible-copy-validation
+          path: |
+            .recovery-results/
+            copy-change-report.json
+            index.html
+            index-copy-e2117d823cf8.js
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
