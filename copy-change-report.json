@@ -1,0 +1,9 @@
+{
+  "baseline_sha256": "9954363149991c8d61f8f4e2e0a61459731df59eccc80cf3b59c68ff96762691",
+  "patched_sha256": "e2117d823cf842c7167ad994d84211146e4abcca22271265c14c40007672f440",
+  "bundle": "index-copy-e2117d823cf8.js",
+  "replacement_rules": 45,
+  "literal_occurrences": 46,
+  "protected_cta": "Demo: iniciar cuidado y seguimiento",
+  "scope": "Presentation copy only; original build retained."
+}
