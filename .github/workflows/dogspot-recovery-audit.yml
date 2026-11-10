@@ -1,0 +1,56 @@
+name: DogSpot recovery backup
+on:
+  push:
+    branches:
+      - recovery/dogspot-2026-11-10
+    paths:
+      - .github/workflows/dogspot-recovery-audit.yml
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 771595f29300934988f4da6c7df628cad495703a
+          persist-credentials: false
+      - name: Back up exact published files and audit visible-text candidates
+        shell: bash
+        run: |
+          mkdir -p recovered
+          git archive --format=zip --output=recovered/dogspot-publicado-2026-11-07.zip HEAD
+          python3 - <<'PY'
+          import json, re, hashlib
+          from pathlib import Path
+          import urllib.request
+          root = Path('.')
+          name = 'index-DER3b9iC.js'
+          content = Path(name).read_text(encoding='utf-8')
+          report = {
+            'baseline_commit': '771595f29300934988f4da6c7df628cad495703a',
+            'scope': 'Published build backup only; not recovered original React/TypeScript source.',
+            'bundle': name,
+            'sha256': hashlib.sha256(Path(name).read_bytes()).hexdigest(),
+            'source_map_references': re.findall(r'sourceMappingURL=([^\s]+)', content),
+            'demo_contexts': [{'offset': m.start(), 'context': content[max(0,m.start()-140):m.end()+220]} for m in re.finditer(r'demo(?:straci[oó]n)?', content, re.I)],
+          }
+          for label, url in [('github_pages','https://videojuegos9927-gif.github.io/dogspot-cuidados/'),('sites','https://dogspot-cuidados.chatgpt-buss-3196.chatgpt.site/')]:
+            try:
+              with urllib.request.urlopen(url, timeout=20) as r:
+                html = r.read().decode('utf-8','replace')
+                report[label] = {'status': r.status, 'url': r.url, 'loads_current_bundle': name in html}
+            except Exception as exc:
+              report[label] = {'error': str(exc)}
+          Path('recovered/audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('Backed up published build, not original source. Main and production unchanged.')
+          print(json.dumps({k:v for k,v in report.items() if k != 'demo_contexts'},ensure_ascii=False,indent=2))
+          print('Demo-context count:',len(report['demo_contexts']))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dogspot-recovery-2026-11-10
+          path: recovered/
+          retention-days: 1
+          if-no-files-found: error
