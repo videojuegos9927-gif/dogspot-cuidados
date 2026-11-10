@@ -1,0 +1,57 @@
+name: DogSpot live publication check
+on:
+  push:
+    branches:
+      - recovery/dogspot-2026-11-10
+    paths:
+      - .github/workflows/dogspot-live-check.yml
+permissions:
+  contents: read
+jobs:
+  check-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: b62b24e8213137b9ebd0c646180e1a11c3d6a8d6
+          persist-credentials: false
+      - name: Verify public page and assets without running app events
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,time,urllib.request
+          from pathlib import Path
+          base='https://videojuegos9927-gif.github.io/dogspot-cuidados/'
+          filename='index-copy-e2117d823cf8.js'
+          expected='e2117d823cf842c7167ad994d84211146e4abcca22271265c14c40007672f440'
+          def get(path):
+            req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'DogSpot-publication-check'})
+            with urllib.request.urlopen(req,timeout=20) as response:
+              assert response.status==200
+              return response.read()
+          for attempt in range(18):
+            try:
+              html=get('?verification=b62b24e82131').decode('utf-8')
+              assert filename in html,'Published page still points to previous bundle'
+              data=get(filename)
+              assert hashlib.sha256(data).hexdigest()==expected
+              break
+            except Exception:
+              if attempt==17:raise
+              time.sleep(5)
+          configs={}
+          for name in ['email-config.json','sheets-config.json']:
+            remote=get(name)
+            assert remote==Path(name).read_bytes(),name+' unexpectedly differs'
+            configs[name]='unchanged'
+          report={'url':base,'http_status':200,'published_commit':'b62b24e8213137b9ebd0c646180e1a11c3d6a8d6','active_bundle':filename,'bundle_sha256':expected,'integration_configuration':configs,'protected_care_demo':data.decode('utf-8').count('`Demo: iniciar cuidado y seguimiento`')==1,'live_forms_or_emails_submitted':False}
+          Path('live-publication-check.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dogspot-live-publication-check
+          path: live-publication-check.json
+          retention-days: 1
+          if-no-files-found: error
