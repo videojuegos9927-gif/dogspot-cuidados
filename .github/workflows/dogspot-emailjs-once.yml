@@ -1,4 +1,4 @@
-name: DogSpot one-time EmailJS delivery diagnostic
+name: DogSpot one-time EmailJS default service diagnostic
 on:
   push:
     branches:
@@ -31,7 +31,7 @@ jobs:
           assert cfg['supportEmail']=='dogspot.peru@gmail.com'
 
           payload={
-            "service_id": cfg["serviceId"],
+            "service_id": "primary_service",
             "template_id": cfg["welcomeTemplateId"],
             "user_id": cfg["publicKey"],
             "template_params": {
@@ -41,7 +41,7 @@ jobs:
               "reply_to": "dogspot.peru@gmail.com",
               "support_email": "dogspot.peru@gmail.com",
               "from_name": "DogSpot",
-              "email_subject": "Prueba de notificación DogSpot",
+              "email_subject": "Prueba de notificación DogSpot, servicio principal",
               "notification_type": "test",
               "message_title": "Prueba de notificación",
               "message_body": "Correo de prueba solicitado para verificar el envío desde DogSpot.",
