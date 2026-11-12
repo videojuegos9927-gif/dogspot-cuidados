@@ -1,0 +1,74 @@
+name: DogSpot one-time EmailJS delivery diagnostic
+on:
+  push:
+    branches:
+      - audit/emailjs-2026-11-12
+    paths:
+      - .github/workflows/dogspot-emailjs-once.yml
+permissions:
+  contents: read
+jobs:
+  one-time-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare existing browser test tools
+        run: |
+          python3 -m pip install --disable-pip-version-check --user playwright==1.57.0
+      - name: Send exactly one welcome test to DogSpot admin with Sheets disabled
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, shutil
+          from playwright.sync_api import sync_playwright
+          from pathlib import Path
+
+          cfg=json.loads(Path('email-config.json').read_text())
+          assert cfg['serviceId']=='service_dogspot_gmail'
+          assert cfg['welcomeTemplateId']=='template_dogspot_bienvenida'
+          assert cfg['enabled'] is True
+          assert cfg['supportEmail']=='dogspot.peru@gmail.com'
+
+          payload={
+            "service_id": cfg["serviceId"],
+            "template_id": cfg["welcomeTemplateId"],
+            "user_id": cfg["publicKey"],
+            "template_params": {
+              "to_email": "dogspot.peru@gmail.com",
+              "customer_name": "DogSpot",
+              "app_url": cfg["appUrl"],
+              "reply_to": "dogspot.peru@gmail.com",
+              "support_email": "dogspot.peru@gmail.com",
+              "from_name": "DogSpot",
+              "email_subject": "Prueba de notificación DogSpot",
+              "notification_type": "test",
+              "message_title": "Prueba de notificación",
+              "message_body": "Correo de prueba solicitado para verificar el envío desde DogSpot.",
+              "demo_notice": "Mensaje de prueba del proyecto académico DogSpot."
+            }
+          }
+          with sync_playwright() as p:
+            binary=shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
+            if not binary:
+              raise RuntimeError("Browser unavailable; no email sent")
+            browser=p.chromium.launch(headless=True,executable_path=binary,args=['--no-sandbox','--disable-dev-shm-usage'])
+            context=browser.new_context()
+            page=context.new_page()
+            page.route("**/sheets-config.json",lambda route:route.fulfill(status=200,content_type="application/json",body='{"enabled":false}'))
+            page.goto(cfg["appUrl"],wait_until="domcontentloaded",timeout=40000)
+            result=page.evaluate("""async payload => {
+              try {
+                const response=await fetch('https://api.emailjs.com/api/v1.0/email/send',{
+                  method:'POST',
+                  headers:{'Content-Type':'application/json'},
+                  body:JSON.stringify(payload)
+                });
+                return {status:response.status,response:(await response.text()).slice(0,400)};
+              }catch(error){return {networkError:String(error).slice(0,400)};}
+            }""",payload)
+            print("EmailJS diagnostic result:",json.dumps(result,ensure_ascii=False))
+            print("This test did not submit any forms to Google Sheets.")
+            context.close()
+            browser.close()
+          PY
