@@ -1,7 +1,7 @@
 {
   "enabled": true,
   "serviceId": "service_dogspot_gmail",
-  "publicKey": "ofFqJDf1px7lNLNU1",
+  "publicKey": "AmVINPpXf7wxCRliq",
   "welcomeTemplateId": "template_dogspot_bienvenida",
   "bookingTemplateId": "template_dogspot_reserva",
   "appUrl": "https://videojuegos9927-gif.github.io/dogspot-cuidados/",
