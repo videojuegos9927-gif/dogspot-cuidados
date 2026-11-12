@@ -1,0 +1,47 @@
+name: DogSpot email diagnostics validation
+on:
+  push:
+    branches:
+      - fix/email-delivery-diagnostics-2026-11-12
+    paths:
+      - index-copy-e2117d823cf8.js
+      - .github/workflows/dogspot-email-diagnostics.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify JavaScript module syntax without sending emails
+        shell: bash
+        run: node --input-type=module --check < index-copy-e2117d823cf8.js
+      - name: Assert safe email routing and unchanged integrations
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          js=Path("index-copy-e2117d823cf8.js").read_text(encoding="utf-8")
+          config=json.loads(Path("email-config.json").read_text(encoding="utf-8"))
+          sheets=json.loads(Path("sheets-config.json").read_text(encoding="utf-8"))
+          assert config["enabled"] is True
+          assert config["serviceId"]=="service_dogspot_gmail"
+          assert config["supportEmail"]=="dogspot.peru@gmail.com"
+          assert sheets["enabled"] is True
+          assert sheets["webAppUrl"].startswith("https://script.google.com/macros/s/")
+          for marker in [
+            "function DogSpotCompletionReceipt(",
+            "Solicitud aceptada por EmailJS",
+            "e.reason===`authorization`",
+            "e.reason===`missing-template`",
+            "e.reason===`recipient`",
+            "e.reason===`configuration`",
+            "Demo: iniciar cuidado y seguimiento",
+          ]:
+            assert marker in js, marker
+          assert "Te enviamos una notificación por correo si tu perfil tiene un correo válido." not in js
+          assert "videojuegos9927@gmail.com" not in js
+          print("Email diagnostics syntax and static checks passed; no messages sent.")
+          PY
