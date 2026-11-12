@@ -1,0 +1,39 @@
+name: DogSpot runtime validation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'index-runtime-*.js'
+      - 'dogspot-runtime.mjs'
+      - 'maintenance/*runtime*'
+      - '.github/workflows/dogspot-runtime-validation.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'index-runtime-*.js'
+      - 'dogspot-runtime.mjs'
+      - 'maintenance/*runtime*'
+      - '.github/workflows/dogspot-runtime-validation.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check syntax of the active published module
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          html = Path('index.html').read_text(encoding='utf-8')
+          name = re.search(r'src="\./(index-runtime-[a-f0-9]+\.js)"', html).group(1)
+          subprocess.run(['node', '--input-type=module', '--check'], input=Path(name).read_text(encoding='utf-8'), text=True, check=True)
+          PY
+          node --check dogspot-runtime.mjs
+      - name: Verify authentication, recovery and queued data without external requests
+        run: node maintenance/test-runtime-fixes.mjs
