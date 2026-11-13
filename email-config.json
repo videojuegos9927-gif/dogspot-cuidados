@@ -1,8 +1,8 @@
 {
   "enabled": true,
-  "serviceId": "service_dogspot_gmail",
+  "serviceId": "primary_service",
   "publicKey": "AmVINPpXf7wxCRliq",
-  "welcomeTemplateId": "template_dogspot_bienvenida",
+  "welcomeTemplateId": "template_dogspot_reserva",
   "bookingTemplateId": "template_dogspot_reserva",
   "appUrl": "https://dogspot-peru.github.io/dogspot-cuidados/",
   "supportEmail": "dogspot.peru@gmail.com"
