@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {registrationState, migrateRegisteredPets} from '../dogspot-onboarding.mjs';
 import {webcrypto} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {prepareSavedState, verifyCredential, emailTemplateId, emailFailureReason, storedQueue} from '../dogspot-runtime.mjs';
@@ -30,7 +31,7 @@ await check('stored registration hash accepts only the correct password', async 
   assert.equal(await verifyCredential('Mascota123', null, webcrypto), false);
 });
 
-const aliases = {DogSpotPrepareSavedState: prepareSavedState, DogSpotVerifyCredential: verifyCredential, DogSpotEmailTemplateId: emailTemplateId, DogSpotEmailFailureReason: emailFailureReason, DogSpotStoredQueue: storedQueue};
+const aliases = {DogSpotRegistrationState: registrationState, DogSpotMigrateRegisteredPets: migrateRegisteredPets, DogSpotPrepareSavedState: prepareSavedState, DogSpotVerifyCredential: verifyCredential, DogSpotEmailTemplateId: emailTemplateId, DogSpotEmailFailureReason: emailFailureReason, DogSpotStoredQueue: storedQueue};
 const common = {crypto: webcrypto, Uint8Array, TextEncoder, URL, AbortController, Intl, setTimeout, clearTimeout, ...aliases};
 const restoreContext = vm.createContext({...common, f: [], m: array => array, Ot: () => [{id: 'meds', label: 'Medicamento', status: 'pendiente'}, {id: 'water', label: 'Agua', status: 'pendiente'}]});
 vm.runInContext(slice('function Ve(', 'var He='), restoreContext);
@@ -153,5 +154,21 @@ await check('existing integration settings and protected service control are ret
   for (const marker of ['Demo: iniciar cuidado y seguimiento', 'function DogSpotCompletionReceipt(', 'dogspot-state-v1', 'dogspot-sheets-pending-v1']) assert.ok(source.includes(marker));
   assert.equal(original.includes('r&&i===r.email'), true);
   assert.equal(source.includes('r&&i===r.email'), false);
+});
+await check('registered accounts remove only the unchanged reference pet', () => {
+  const reference = {id: 'luna', name: 'Luna', meds: ''};
+  assert.equal(migrateRegisteredPets({user, pets: [reference], bookings: []}, reference).pets.length, 0);
+  assert.equal(migrateRegisteredPets({user, pets: [{...reference, id:'registered-pet'}], bookings: []}, reference).pets.length, 1);
+  assert.equal(migrateRegisteredPets({user, pets: [{...reference, photo:'local'}], bookings: []}, reference).pets.length, 1);
+  assert.equal(migrateRegisteredPets({user, pets: [reference], bookings: [{petId:'luna'}]}, reference).pets.length, 1);
+});
+await check('new registration starts without the exploration pet and keeps mail independent', () => {
+  const p = provider({...defaults,user:null,bookings:[],currentBookingId:null,pets:[{id:'luna',name:'Luna'}]});
+  p.api.registerUser(user, credential);
+  assert.equal(p.state().pets.length, 0);
+  assert.equal(p.state().selectedPetId, '');
+  assert.equal(p.state().screen, 'registration-confirmation');
+  assert.equal(p.state().authCredential.derived, credential.derived);
+  assert.equal(p.registration().length, 3);
 });
 console.log(`${checks.length} offline regression checks passed for ${name}.`);
