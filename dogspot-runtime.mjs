@@ -56,6 +56,7 @@ export function emailTemplateId(config, kind) {
 export function emailFailureReason(status, body = '') {
   const message = String(body).slice(0, 1000).toLowerCase();
   if (status === 429) return 'quota';
+  if (status === 404 && /no records found|public.?key.*service.?id.*template.?id/.test(message)) return 'configuration';
   if (/public.?key|user.?id|account.*not found/.test(message)) return 'public-key';
   if (/template.*(not found|invalid|does not exist)/.test(message)) return 'missing-template';
   if (/service.*(not found|invalid|does not exist)/.test(message)) return 'missing-service';
@@ -73,3 +74,4 @@ export function storedQueue(storage, key, restore, origin) {
     return Array.isArray(value) ? value.map(event => {try {return restore(event, origin);} catch {return null;}}).filter(Boolean).slice(-500) : [];
   } catch {return [];}
 }
+
