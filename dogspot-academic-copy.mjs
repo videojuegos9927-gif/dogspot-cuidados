@@ -1,5 +1,6 @@
 // Presentation copy for DogSpot's academic app. Business and security logic stay in the app bundle.
 const copy = new Map([
+  ['Ej.: Luna', 'Nombre de tu mascota'],
   ['Prototipo académico interactivo · Hecho para tu tranquilidad', 'App académica · Hecho para tu tranquilidad'],
   ['Prototipo académico: los pagos son simulados; no se realizan transacciones reales ni se solicitan credenciales bancarias.', 'App académica: el registro de pago no realiza un cobro bancario ni solicita credenciales bancarias.'],
   ['Prototipo académico DogSpot. Los pagos y los servicios son simulados; este mensaje no acredita un cobro ni un servicio real.', 'DogSpot · App académica. El registro del servicio no acredita un cobro bancario.'],
